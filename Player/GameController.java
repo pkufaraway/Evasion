@@ -20,12 +20,13 @@ class GameController {
     private PrintWriter outputStream;
     private BufferedReader inputStream;
     private EvasionStatus gameStatus;
+    private String currentRole;
 
     GameController(Integer portNumber) throws IOException {
         this.portNumber = portNumber;
         gameStatus = new EvasionStatus();
         connectToSocket();
-        writeToSocket("WA");
+        writeToSocket("WA\n");
         listenForMoves();
     }
 
@@ -44,19 +45,30 @@ class GameController {
         String incomingString;
         while (true) {
             incomingString = inputStream.readLine();
-            System.out.println(incomingString);
+            //System.out.println(incomingString);
             String[] splitString = incomingString.trim().split(" ");
+            if(splitString[0].equals("hunter")){
+                currentRole = "hunter";
+                System.out.println("We are hunter now!");
+            }
+            else if(splitString[0].equals("prey")){
+                currentRole = "prey";
+                System.out.println("We are prey now!");
+            }
             if(splitString.length > 5) {
                 gameStatus.refreshStatus(splitString);
-                writeToSocket(gameStatus.naiveReturn());
+                if(currentRole.equals("hunter")) {
+                    writeToSocket(gameStatus.hunterReturn());
+                } else{
+                    writeToSocket(gameStatus.preyReturn());
+                }
             }
-
         }
         //endGame();
     }
 
     private void writeToSocket(String moveToMake) {
-        outputStream.write(moveToMake + "\n");
+        outputStream.write(moveToMake);
         outputStream.flush();
     }
 

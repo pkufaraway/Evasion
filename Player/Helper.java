@@ -12,7 +12,7 @@ public class Helper {
                 return false;
             }
         }
-        else{
+        else {
             p3 = new Point2D.Double(wall.position, wall.start);
             p4 = new Point2D.Double(wall.position, wall.end);
             if(!lineOne.intersectsLine(new Line2D.Double(p3,p4))){
@@ -22,7 +22,7 @@ public class Helper {
         return true;
     }
 
-    public static boolean gettingCloser(Point2D hunter, Point2D prey, Point2D direction){
+    public static boolean getCloser(Point2D hunter, Point2D prey, Point2D direction){
         double x1 = prey.getX() - hunter.getX();
         double y1 = prey.getY() - hunter.getY();
         double x2 = direction.getX();

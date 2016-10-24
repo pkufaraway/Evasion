@@ -6,8 +6,7 @@ This is the implementation of the architecture for the [evasion game](http://cs.
 
 * Java 8 SDK
 * Apache Maven
-
-(available on energon2)
+* Node.js (optional, client-side, for display) Tested on v5.5.0
 
 # Clone and build
 
@@ -153,7 +152,7 @@ Specifically, this [helpful reference](http://www.roguebasin.com/index.php?title
 
 # Display
 
-To enable the display, on your local machine, first run `node web.js [display port] [local webserver port]`, and go to `localhost:[local webserver port]` in your browser. You'll be accessing the port given by `[local webserver port]` locally, but if using energon2 you'll need a connection from it to your local port given by `[display port]`, so router/firewall port forwarding for that port might be required.
+To enable the display, on your local machine, first run `node web.js [display port] [local webserver port]`, and go to `localhost:[local webserver port]` in your browser. You'll be accessing the port given by `[local webserver port]` locally, but if using energon you'll need a connection from energon to your local port given by `[display port]`, so router/firewall port forwarding for that port might be required.
 
 Now run the main java jar (on energon2 or locally), supplying the display host and display port parameters as listed in the run instructions above. If running locally, host should be "localhost". If running on energon, it should be the ip address of your local machine. (You can try using 'python display/getLocalIp.py' but if that fails any "what is my ip" web service should suffice.) The display port should match what you supplied to the node server.
 
@@ -174,5 +173,4 @@ To run: `python random_player.py [port on which to connect]`
 
 # TODO
 
-* Design and implement a visual game display.
-* Fix any bugs that are inevitably present.
+* Make display show more information and look nicer.
