@@ -26,7 +26,7 @@ mvn clean package
 
 ```
 module load java-1.8
-java -jar ./target/evasion-1.0-SNAPSHOT.jar [player 1 port] [player 2 port] [max walls] [wall placement delay]
+java -jar ./target/evasion-1.0-SNAPSHOT.jar [player 1 port] [player 2 port] [max walls] [wall placement delay] ([display host] [display port])
 ```
 
 # Details
@@ -45,9 +45,9 @@ Immediately after that, the game will commence and the server will begin sending
 
 Each "{wall info}" above is just a set of numbers describing a wall on the playing field. There will be `[numWalls]` such sets.
 
-A horizontal wall is identified by: `0 [y] [x1] [x2]` where `y` is its y location, `x1` is the x location of its left-most pixel (e.g. smaller x value), and `x2` is the x location of its right-most pixel (e.g. larger x value). 
+A horizontal wall is identified by: `0 [y] [x1] [x2]` where `y` is its y location, `x1` is the x location of its left-most pixel (i.e. smaller x value), and `x2` is the x location of its right-most pixel (i.e. larger x value). 
 
-A vertical wall is identified by: `1 [x] [y1] [y2]` where `x` is its x location, `y1` is the y location of its bottom-most pixel (e.g. smaller y value), and `y2` is the y location of its top-most pixel (e.g. larger y value). 
+A vertical wall is identified by: `1 [x] [y1] [y2]` where `x` is its x location, `y1` is the y location of its bottom-most pixel (i.e. smaller y value), and `y2` is the y location of its top-most pixel (i.e. larger y value). 
 
 The order of the `{wall info}` sets is relevent; when the hunter references a wall to delete it should do so using the wall's place in this list, starting at 0.
 
@@ -150,6 +150,15 @@ The x and y movement specifies the direction in which the prey wishes to travel.
 As noted in the class site game overview, the game is over when the Euclidean distance between hunter and prey is within four, and there is no wall between them. Specifically, this implementation calculates whether a wall is between them by using [Bresenham's line algorithm](https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm) to find the points approximately on the line segment connecting them, and testing whether a wall occupies any of those points. 
 
 Specifically, this [helpful reference](http://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm#Ruby) was used as a guideline for implementing the algorithm. The Ruby version specifically was translated into a Java implementation for use in this project.
+
+# Display
+
+To enable the display, on your local machine, first run `node web.js [display port] [local webserver port]`, and go to `localhost:[local webserver port]` in your browser. You'll be accessing the port given by `[local webserver port]` locally, but if using energon2 you'll need a connection from it to your local port given by `[display port]`, so router/firewall port forwarding for that port might be required.
+
+Now run the main java jar (on energon2 or locally), supplying the display host and display port parameters as listed in the run instructions above. If running locally, host should be "localhost". If running on energon, it should be the ip address of your local machine. (You can try using 'python display/getLocalIp.py' but if that fails any "what is my ip" web service should suffice.) The display port should match what you supplied to the node server.
+
+From this point everything should just work. You should not need to reset your browser tab or the node server -- not even in between restarts of the java jar.
+
 
 # Other notes
 

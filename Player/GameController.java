@@ -48,8 +48,8 @@ class GameController {
             String[] splitString = incomingString.trim().split(" ");
             if(splitString.length > 5) {
                 gameStatus.refreshStatus(splitString);
+                writeToSocket(gameStatus.naiveReturn());
             }
-            writeToSocket(gameStatus.naiveReturn());
 
         }
         //endGame();
