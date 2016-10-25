@@ -277,25 +277,27 @@ public class EvasionStatus {
         buffer.append(" ");
         buffer.append(tickNum);
         buffer.append(" ");
-        if (tickNum % 2 != 0) {
-          buffer.append("0 0");
-        } else {
+        if (tickNum % 2 == 0) {
             if (raceForVertWall == 0 && raceForHorizWall == 0) {
                 searchForNewRun();
             } else if (raceForVertWall != 0) {
                 if (raceForVertWall < 0) {
                     yMove = -1;
+                    System.out.println("Escaping up from wall");
                     raceForVertWall++;
                 } else {
                     yMove = 1;
+                    System.out.println("Escaping down from wall");
                     raceForVertWall--;
                 }
             } else if (raceForHorizWall != 0) {
                 if (raceForHorizWall < 0) {
                     xMove = -1;
+                    System.out.println("Escaping left from wall");
                     raceForHorizWall++;
                 } else {
                     xMove = 1;
+                    System.out.println("Escaping right from wall");
                     raceForHorizWall--;
                 }
             } else {
@@ -303,20 +305,26 @@ public class EvasionStatus {
               int normalMove = findNormalMove();
               switch(normalMove) {
                 case 1: 
-                  xMove = 1;
+                  System.out.println("Normal move up");
+                  yMove = 1;
                   break;
                 case 2:
-                  xMove = -1;
-                  break;
-                case 3: 
+                  System.out.println("Normal move down");
                   yMove = -1;
                   break;
+                case 3: 
+                  System.out.println("Normal move left");
+
+                  xMove = -1;
+                  break;
                 case 4: 
-                  yMove = 1;
+                  System.out.println("Normal move right");
+                  xMove = 1;
                   break;
               }
             }        
         }
+        
         buffer.append(xMove + " " + yMove);
         buffer.append("\n");
         System.out.println(buffer.toString());
