@@ -20,7 +20,8 @@ class GameController {
     private PrintWriter outputStream;
     private BufferedReader inputStream;
     private EvasionStatus gameStatus;
-    private String currentRole;
+    private boolean weAreHunter = false;
+    private boolean weArePrey = false;
 
     GameController(Integer portNumber) throws IOException {
         this.portNumber = portNumber;
@@ -28,6 +29,7 @@ class GameController {
         connectToSocket();
         writeToSocket("WA\n");
         listenForMoves();
+        endGame();
     }
 
     private void connectToSocket() {
@@ -47,21 +49,24 @@ class GameController {
             incomingString = inputStream.readLine();
             //System.out.println(incomingString);
             String[] splitString = incomingString.trim().split(" ");
-            if(splitString[0].equals("hunter")){
-                currentRole = "hunter";
-                System.out.println("We are hunter now!");
-            }
-            else if(splitString[0].equals("prey")){
-                currentRole = "prey";
-                System.out.println("We are prey now!");
-            }
-            if(splitString.length > 5) {
+            
+            if (splitString.length > 5) {
                 gameStatus.refreshStatus(splitString);
-                if(currentRole.equals("hunter")) {
+                if(weAreHunter) {
                     writeToSocket(gameStatus.hunterReturn());
-                } else{
+                } else if (weArePrey) {
                     writeToSocket(gameStatus.preyReturn());
                 }
+            } else if (splitString[0].equals("hunter")){
+                weAreHunter = true;
+                weArePrey = false;
+                System.out.println("We are hunter now!");
+            } else if (splitString[0].equals("prey")){
+                weArePrey = true;
+                weAreHunter = false;
+                System.out.println("We are prey now!");
+            } else if (splitString[0].equals("done")) {
+              break;
             }
         }
         //endGame();

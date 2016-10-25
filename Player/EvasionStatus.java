@@ -1,9 +1,8 @@
-import java.awt.*;
-import java.awt.geom.*;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 public class EvasionStatus {
     int timeLeft;
@@ -20,6 +19,13 @@ public class EvasionStatus {
     ArrayList<Wall> walls;
     int currentWallTimer;
     Rectangle2D huntingMap = new Rectangle2D.Double();
+    int raceForVertWall = 0;
+    int raceForHorizWall = 0;
+    
+    int leftWall = 0;
+    int rightWall = 499;
+    int topWall = 499;
+    int bottomWall = 0;
 
 
     public void refreshStatus(String[] status){
@@ -144,6 +150,69 @@ public class EvasionStatus {
         }
         return answer;
     }
+    
+    private boolean moveIsSafe(int x, int y) {
+      return hunter.distance(prey.getX() + x, prey.getY() + y) > 4 && 
+          Point2D.distance(hunter.getX() + direction.getX(),
+              hunter.getY() + direction.getY(), prey.getX() + x, prey.getY() + y) > 4;
+    }
+    
+    private boolean canMakePastPossibleWall(int x, int y) {
+      int wallTimer = currentWallTimer;
+      int steps = 0;
+      while (wallTimer > 0) {
+        steps++;
+        //Conditions for safe step
+        if (!(hunter.distance(prey.getX() + steps * x, prey.getY() + steps * y) > 4.0) ||
+            !(Point2D.distance(hunter.getX() + (steps * direction.getX()),
+              hunter.getY() + (steps * direction.getY()),
+              prey.getX() + steps * x, prey.getY() + steps * y) > 4.0)) {
+         return false; 
+        }
+        wallTimer--;
+      }
+      return true;
+    }
+    
+    private void findWalls() {
+      for (Wall wall : walls) {
+        if (wall.wallType == 1) {
+          leftWall = (wall.position > leftWall) ? wall.position : leftWall;
+          rightWall = (wall.position < rightWall) ? wall.position : rightWall;
+        } else {
+          topWall = (wall.position < topWall) ? wall.position : topWall;
+          bottomWall = (wall.position > bottomWall) ? wall.position : bottomWall;
+        }
+      }
+    }
+    
+    private void searchForNewRun() {
+      //Hunter is above prey, moving down, and we can get by
+      if ((topWall - bottomWall / 2) > prey.getY() && 
+          (topWall - bottomWall / 2) < hunter.getY() &&
+          direction.getY() < 0 &&
+          canMakePastPossibleWall(0, 1)) {
+        raceForVertWall = currentWallTimer;
+      //Hunter is below, moving up and we can get by
+      } else if ((topWall - bottomWall / 2) < prey.getY() && 
+          (topWall - bottomWall / 2) > hunter.getY() &&
+          direction.getY() > 0 &&
+          canMakePastPossibleWall(0, -1)) {
+        raceForVertWall = -currentWallTimer;
+      //Hunter is to the left and we can get by
+      } else if ((rightWall - leftWall / 2) < prey.getX() && 
+          (rightWall - leftWall / 2) > hunter.getX() &&
+          direction.getX() > 0 &&
+          canMakePastPossibleWall(-1, 0)) {
+        raceForHorizWall = -currentWallTimer;
+      //Hunter is to the right and we can get by
+      } else if ((rightWall - leftWall / 2) < prey.getX() && 
+          (rightWall - leftWall / 2) > hunter.getX() &&
+          direction.getX() > 0 &&
+          canMakePastPossibleWall(1, 0)) {
+        raceForHorizWall = currentWallTimer;
+      }
+    }
 
     public String hunterReturn(){
         List<Integer> wallToDestroy = wallToDestroy();
@@ -164,20 +233,93 @@ public class EvasionStatus {
         //System.out.printf("Sent: %s \n", answer);
         return answer;
     }
+    
+    /***
+     * 0 = don't move
+     * 1 = move up
+     * 2 = move down
+     * 3 = move left
+     * 4 = move right
+     * 
+     * Just return the safest move which will maximize distance from the hunter
+     * @return
+     */
+    private int findNormalMove() {
+      ArrayList<Double> distances = new ArrayList<Double>();
+      double distanceUp = hunter.distance(prey.getX(), prey.getY() + 1.0);
+      double distanceDown = hunter.distance(prey.getX(), prey.getY() - 1.0);
+      double distanceLeft = hunter.distance(prey.getX() - 1.0, prey.getY());
+      double distanceRight = hunter.distance(prey.getX() + 1.0, prey.getY());
+      
+      distanceUp = moveIsSafe(0, 1) ? distanceUp : -Double.MAX_VALUE;
+      distanceDown = moveIsSafe(0, -1) ? distanceDown : -Double.MAX_VALUE;
+      distanceLeft = moveIsSafe(-1, 0) ? distanceLeft : -Double.MAX_VALUE;
+      distanceRight = moveIsSafe(1, 0) ? distanceRight : -Double.MAX_VALUE;
+
+      distances.add(-1.0);
+      distances.add(distanceUp);
+      distances.add(distanceDown);
+      distances.add(distanceLeft);
+      distances.add(distanceRight);
+      
+      Double max = Collections.max(distances);
+      
+      return distances.indexOf(max);
+    }
 
     public String preyReturn(){
+        int xMove = 0;
+        int yMove = 0;
+        findWalls();
+        
         StringBuilder buffer = new StringBuilder();
-        Random random = new Random();
-        int x = random.nextInt(3) - 1;
-        int y = random.nextInt(3) - 1;
         buffer.append(gameNum);
         buffer.append(" ");
         buffer.append(tickNum);
         buffer.append(" ");
-        buffer.append(x);
-        buffer.append(" ");
-        buffer.append(y);
+        if (tickNum % 2 != 0) {
+          buffer.append("0 0");
+        } else {
+            if (raceForVertWall == 0 && raceForHorizWall == 0) {
+                searchForNewRun();
+            } else if (raceForVertWall != 0) {
+                if (raceForVertWall < 0) {
+                    yMove = -1;
+                    raceForVertWall++;
+                } else {
+                    yMove = 1;
+                    raceForVertWall--;
+                }
+            } else if (raceForHorizWall != 0) {
+                if (raceForHorizWall < 0) {
+                    xMove = -1;
+                    raceForHorizWall++;
+                } else {
+                    xMove = 1;
+                    raceForHorizWall--;
+                }
+            } else {
+                //just move away from the hunter, but in the direction of more open space
+              int normalMove = findNormalMove();
+              switch(normalMove) {
+                case 1: 
+                  xMove = 1;
+                  break;
+                case 2:
+                  xMove = -1;
+                  break;
+                case 3: 
+                  yMove = -1;
+                  break;
+                case 4: 
+                  yMove = 1;
+                  break;
+              }
+            }        
+        }
+        buffer.append(xMove + " " + yMove);
         buffer.append("\n");
+        System.out.println(buffer.toString());
         return buffer.toString();
     }
 
