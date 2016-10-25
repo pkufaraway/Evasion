@@ -24,8 +24,8 @@ public class EvasionStatus {
     
     int leftWall = 0;
     int rightWall = 499;
-    int topWall = 499;
-    int bottomWall = 0;
+    int topWall = 0;
+    int bottomWall = 499;
 
 
     public void refreshStatus(String[] status){
@@ -158,7 +158,7 @@ public class EvasionStatus {
     }
     
     private boolean canMakePastPossibleWall(int x, int y) {
-      int wallTimer = currentWallTimer;
+      int wallTimer = currentWallTimer + maxDelay - tickNum;
       int steps = 0;
       while (wallTimer > 0) {
         steps++;
@@ -177,41 +177,45 @@ public class EvasionStatus {
     private void findWalls() {
       for (Wall wall : walls) {
         if (wall.wallType == 1) {
-          leftWall = (wall.position > leftWall) ? wall.position : leftWall;
-          rightWall = (wall.position < rightWall) ? wall.position : rightWall;
+          leftWall = (wall.position > leftWall && wall.position < prey.getX()) ? wall.position : leftWall;
+          rightWall = (wall.position < rightWall && wall.position > prey.getX()) ? wall.position : rightWall;
         } else {
-          topWall = (wall.position < topWall) ? wall.position : topWall;
-          bottomWall = (wall.position > bottomWall) ? wall.position : bottomWall;
+          topWall = (wall.position > topWall && wall.position < prey.getY()) ? wall.position : topWall;
+          bottomWall = (wall.position < bottomWall && wall.position > prey.getY()) ? wall.position : bottomWall;
         }
       }
+      System.out.printf("topwall %d bottom wall %d left wall %d right wall %d \n", topWall, bottomWall, leftWall, rightWall);
     }
     
-    private void searchForNewRun() {
+    private Point2D searchForNewRun() {
       //Hunter is above prey, moving down, and we can get by
-      if ((topWall - bottomWall / 2) > prey.getY() && 
-          (topWall - bottomWall / 2) < hunter.getY() &&
+        int timeLeftForNextWall = currentWallTimer + maxDelay - tickNum;
+      if ((bottomWall - topWall) / 2.0 > prey.getY() &&
+          (bottomWall - topWall) / 2.0 < hunter.getY() &&
           direction.getY() < 0 &&
           canMakePastPossibleWall(0, 1)) {
-        raceForVertWall = currentWallTimer;
+            return new Point2D.Double(0, 1);
       //Hunter is below, moving up and we can get by
-      } else if ((topWall - bottomWall / 2) < prey.getY() && 
-          (topWall - bottomWall / 2) > hunter.getY() &&
+      } else if ((bottomWall - topWall)/ 2.0 < prey.getY() &&
+          (bottomWall - topWall)/ 2.0 > hunter.getY() &&
           direction.getY() > 0 &&
           canMakePastPossibleWall(0, -1)) {
-        raceForVertWall = -currentWallTimer;
+          return new Point2D.Double(0, -1);
+
       //Hunter is to the left and we can get by
-      } else if ((rightWall - leftWall / 2) < prey.getX() && 
-          (rightWall - leftWall / 2) > hunter.getX() &&
+      } else if ((rightWall - leftWall) / 2.0 < prey.getX() &&
+          (rightWall - leftWall) / 2.0 > hunter.getX() &&
           direction.getX() > 0 &&
           canMakePastPossibleWall(-1, 0)) {
-        raceForHorizWall = -currentWallTimer;
+          return new Point2D.Double(-1, 0);
       //Hunter is to the right and we can get by
-      } else if ((rightWall - leftWall / 2) < prey.getX() && 
-          (rightWall - leftWall / 2) > hunter.getX() &&
+      } else if ((rightWall - leftWall) / 2.0 < prey.getX() &&
+              (rightWall - leftWall) / 2.0 > hunter.getX() &&
           direction.getX() > 0 &&
           canMakePastPossibleWall(1, 0)) {
-        raceForHorizWall = currentWallTimer;
+        return new Point2D.Double(1, 0);
       }
+        return null;
     }
 
     public String hunterReturn(){
@@ -233,7 +237,23 @@ public class EvasionStatus {
         //System.out.printf("Sent: %s \n", answer);
         return answer;
     }
-    
+
+
+    private boolean isValidMove(int x, int y){
+        for(Wall wall : walls){
+            if(wall.wallType == 0){
+                if(y == wall.position){
+                    return false;
+                }
+            } else {
+                if(x == wall.position){
+                    return false;
+                }
+            }
+        }
+        System.out.printf("x %d y %d \n", x, y);
+        return !(x == -1 || x == N || y == -1 || y == M);
+    }
     /***
      * 0 = don't move
      * 1 = move up
@@ -244,87 +264,47 @@ public class EvasionStatus {
      * Just return the safest move which will maximize distance from the hunter
      * @return
      */
-    private int findNormalMove() {
-      ArrayList<Double> distances = new ArrayList<Double>();
-      double distanceUp = hunter.distance(prey.getX(), prey.getY() + 1.0);
-      double distanceDown = hunter.distance(prey.getX(), prey.getY() - 1.0);
-      double distanceLeft = hunter.distance(prey.getX() - 1.0, prey.getY());
-      double distanceRight = hunter.distance(prey.getX() + 1.0, prey.getY());
-      
-      distanceUp = moveIsSafe(0, 1) ? distanceUp : -Double.MAX_VALUE;
-      distanceDown = moveIsSafe(0, -1) ? distanceDown : -Double.MAX_VALUE;
-      distanceLeft = moveIsSafe(-1, 0) ? distanceLeft : -Double.MAX_VALUE;
-      distanceRight = moveIsSafe(1, 0) ? distanceRight : -Double.MAX_VALUE;
-
-      distances.add(-1.0);
-      distances.add(distanceUp);
-      distances.add(distanceDown);
-      distances.add(distanceLeft);
-      distances.add(distanceRight);
-      
-      Double max = Collections.max(distances);
-      
-      return distances.indexOf(max);
+    private Point2D findNormalMove() {
+        double maxDistance = 0;
+        Point2D move = new Point2D.Double(prey.getX(),prey.getY());
+        for (int x = -1; x <= 1; x++){
+            for(int y = -1; y <= 1; y++){
+                if(isValidMove((int)prey.getX() + x, (int)prey.getY() + y) && !(x == 0 && y == 0)) {
+                    double distance = hunter.distance(prey.getX() + x, prey.getY() + y);
+                    if (distance > maxDistance) {
+                        maxDistance = distance;
+                        move = new Point2D.Double(x, y);
+                    }
+                }
+            }
+        }
+      return move;
     }
 
     public String preyReturn(){
         int xMove = 0;
         int yMove = 0;
         findWalls();
-        
+        findNormalMove();
+        System.out.println(prey);
         StringBuilder buffer = new StringBuilder();
         buffer.append(gameNum);
         buffer.append(" ");
         buffer.append(tickNum);
         buffer.append(" ");
-        if (tickNum % 2 == 0) {
-            if (raceForVertWall == 0 && raceForHorizWall == 0) {
-                searchForNewRun();
-            } else if (raceForVertWall != 0) {
-                if (raceForVertWall < 0) {
-                    yMove = -1;
-                    System.out.println("Escaping up from wall");
-                    raceForVertWall++;
-                } else {
-                    yMove = 1;
-                    System.out.println("Escaping down from wall");
-                    raceForVertWall--;
-                }
-            } else if (raceForHorizWall != 0) {
-                if (raceForHorizWall < 0) {
-                    xMove = -1;
-                    System.out.println("Escaping left from wall");
-                    raceForHorizWall++;
-                } else {
-                    xMove = 1;
-                    System.out.println("Escaping right from wall");
-                    raceForHorizWall--;
-                }
+
+        if (tickNum % 2 != 0) {
+            Point2D move = searchForNewRun();
+            if (move != null){
+                xMove = (int)move.getX();
+                yMove = (int)move.getY();
             } else {
                 //just move away from the hunter, but in the direction of more open space
-              int normalMove = findNormalMove();
-              switch(normalMove) {
-                case 1: 
-                  System.out.println("Normal move up");
-                  yMove = 1;
-                  break;
-                case 2:
-                  System.out.println("Normal move down");
-                  yMove = -1;
-                  break;
-                case 3: 
-                  System.out.println("Normal move left");
-
-                  xMove = -1;
-                  break;
-                case 4: 
-                  System.out.println("Normal move right");
-                  xMove = 1;
-                  break;
-              }
+                move = findNormalMove();
+                xMove = (int)move.getX();
+                yMove = (int)move.getY();
             }        
         }
-        
         buffer.append(xMove + " " + yMove);
         buffer.append("\n");
         System.out.println(buffer.toString());
