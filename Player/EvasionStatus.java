@@ -1,3 +1,4 @@
+import java.awt.*;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
@@ -21,12 +22,20 @@ public class EvasionStatus {
     Rectangle2D huntingMap = new Rectangle2D.Double();
     int raceForVertWall = 0;
     int raceForHorizWall = 0;
-
+    List<Point2D> directions;
     int leftWall = 0;
     int rightWall = 499;
     int topWall = 0;
     int bottomWall = 499;
 
+    public EvasionStatus(){
+        directions = new ArrayList<>();
+        for(int i = -1; i <= 1; i++){
+            for(int j = -1; j <= 1; j++){
+                directions.add(new Point2D.Double(i,j));
+            }
+        }
+    }
 
     public void refreshStatus(String[] status){
         //Refresh basic information
@@ -189,36 +198,20 @@ public class EvasionStatus {
 
     private Point2D searchForNewRun() {
         //Hunter is above prey, moving down, and we can get by
-        Point2D move = new Point2D.Double(0,0);
-        if ((bottomWall - topWall) / 2.0 > prey.getY() &&
-                (bottomWall - topWall) / 2.0 < hunter.getY() &&
-                direction.getY() < 0) {
-            move.setLocation(move.getX(),move.getY() + 1);
-        } else if ((bottomWall - topWall)/ 2.0 < prey.getY() &&
-                (bottomWall - topWall)/ 2.0 > hunter.getY() &&
-                direction.getY() > 0) {
-            move.setLocation(move.getX(),move.getY() - 1);
-        }
-
-        if ((rightWall - leftWall) / 2.0 < prey.getX() &&
-                (rightWall - leftWall) / 2.0 > hunter.getX() &&
-                direction.getX() > 0) {
-            move.setLocation(move.getX() - 1, move.getY());
-        } else if ((rightWall - leftWall) / 2.0 > prey.getX() &&
-                (rightWall - leftWall) / 2.0 < hunter.getX() &&
-                direction.getX() < 0) {
-            move.setLocation(move.getX() + 1, move.getY());
-        }
-
-        if(move.getX() == 0 && move.getY() == 0 || !canMakePastPossibleWall((int)move.getX(), (int)move.getY())
-                || !isValidMove((int)(prey.getX() + move.getX()), (int)(prey.getY() + move.getY()))){
-            return null;
-        } else {
-            if(move.getX() != 0 && move.getY() != 0){
-                System.out.println("good move");
+        double minDistance = Double.MAX_VALUE;
+        Point2D result = new Point2D.Double(0, 0);
+        for(Point2D move: directions){
+            int newX = (int)(prey.getX() + move.getX());
+            int newY = (int)(prey.getY() + move.getY());
+            if(isValidMove(newX, newY)){
+                double distance = hunter.distance(newX, newY);
+                if(distance < minDistance){
+                    minDistance = distance;
+                    result = move;
+                }
             }
-            return move;
         }
+        return result;
     }
 
     public String hunterReturn(){
@@ -254,40 +247,13 @@ public class EvasionStatus {
                 }
             }
         }
-        return !(x == -1 || x == N || y == -1 || y == M);
-    }
-    /***
-     * 0 = don't move
-     * 1 = move up
-     * 2 = move down
-     * 3 = move left
-     * 4 = move right
-     *
-     * Just return the safest move which will maximize distance from the hunter
-     * @return
-     */
-    private Point2D findNormalMove() {
-        double maxDistance = 0;
-        Point2D move = new Point2D.Double(prey.getX(),prey.getY());
-        for (int x = -1; x <= 1; x++){
-            for(int y = -1; y <= 1; y++){
-                if(isValidMove((int)prey.getX() + x, (int)prey.getY() + y)) {
-                    double distance = hunter.distance(prey.getX() + x, prey.getY() + y);
-                    if (distance > maxDistance) {
-                        maxDistance = distance;
-                        move = new Point2D.Double(x, y);
-                    }
-                }
-            }
-        }
-        return move;
+        return !(x == -1 || x == N || y == -1 || y == M || hunter.distance(x,y) < 6);
     }
 
     public String preyReturn(){
         int xMove = 0;
         int yMove = 0;
         findWalls();
-        findNormalMove();
         System.out.println(prey);
         StringBuilder buffer = new StringBuilder();
         buffer.append(gameNum);
@@ -297,15 +263,8 @@ public class EvasionStatus {
 
         if (tickNum % 2 != 0) {
             Point2D move = searchForNewRun();
-            if (move != null){
-                xMove = (int)move.getX();
-                yMove = (int)move.getY();
-            } else {
-                //just move away from the hunter, but in the direction of more open space
-                move = findNormalMove();
-                xMove = (int)move.getX();
-                yMove = (int)move.getY();
-            }
+            xMove = (int)move.getX();
+            yMove = (int)move.getY();
         }
         buffer.append(xMove + " " + yMove);
         buffer.append("\n");

@@ -161,7 +161,7 @@ From this point everything should just work. You should not need to reset your b
 
 # Other notes
 
-Each player has two minutes of "thinking" time, which can be distributed across ticks as they see fit. If a player's total elapsed time reaches zero on any turn, they forfeit. (Note: this is basically the opposite of what was described in class -- the realtime, 1/60th of a second per tick, server-ignoring-old-moves system has been scrapped.)
+Each player has two minutes of "thinking" time, which can be distributed across ticks as they see fit. If a player's total elapsed time reaches zero on any turn, the game is over. If the prey times out, the score for the current game is recorded as the current tick number. If the hunter times out, the score for the current game is recorded as (effectively) infinity. (Note: this is basically the opposite of what was described in class -- the realtime, 1/60th of a second per tick, server-ignoring-old-moves system has been scrapped.)
 
 The current game is over when the server sends the message `hunter` or `prey`, meaning a new game is about to start, or `done`, meaning the session is over and the player should disconnect.
 
