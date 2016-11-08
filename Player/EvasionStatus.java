@@ -108,7 +108,7 @@ public class EvasionStatus {
         Rectangle2D huntingMapResult = huntingMap;
         if (numWalls < maxWalls
                 && tickNum - lastWallTick >= maxDelay
-                && (Math.abs(hunter.getX()-prey.getX()) < 2 * maxDelay + 2 || Math.abs(hunter.getY()-prey.getY()) < 2 * maxDelay + 2)){
+                && (Math.abs(hunter.getX()-prey.getX()) < 2 || Math.abs(hunter.getY()-prey.getY()) < 2)){
             double maxSize = N * M;
             Rectangle2D newHuntingMapH;
             Rectangle2D newHuntingMapV;
@@ -158,29 +158,6 @@ public class EvasionStatus {
             }
         }
         return answer;
-    }
-
-    private boolean moveIsSafe(int x, int y) {
-        return hunter.distance(prey.getX() + x, prey.getY() + y) > 4 &&
-                Point2D.distance(hunter.getX() + direction.getX(),
-                        hunter.getY() + direction.getY(), prey.getX() + x, prey.getY() + y) > 4;
-    }
-
-    private boolean canMakePastPossibleWall(int x, int y) {
-        int wallTimer = currentWallTimer + maxDelay - tickNum;
-        int steps = 0;
-        while (wallTimer > 0) {
-            steps++;
-            //Conditions for safe step
-            if (!(hunter.distance(prey.getX() + steps * x, prey.getY() + steps * y) > 4.0) ||
-                    !(Point2D.distance(hunter.getX() + (steps * direction.getX()),
-                            hunter.getY() + (steps * direction.getY()),
-                            prey.getX() + steps * x, prey.getY() + steps * y) > 4.0)) {
-                return false;
-            }
-            wallTimer--;
-        }
-        return true;
     }
 
     private void findWalls() {
@@ -247,7 +224,7 @@ public class EvasionStatus {
                 }
             }
         }
-        return !(x == -1 || x == N || y == -1 || y == M || hunter.distance(x,y) < 6);
+        return !(x == -1 || x == N || y == -1 || y == M || hunter.distance(x,y) < 7);
     }
 
     public String preyReturn(){
